@@ -1,0 +1,137 @@
+.MODEL SMALL
+
+.STACK 100H
+
+.DATA
+    CR EQU 0DH
+    LF EQU 0AH
+    
+    MSG1 DB 'ENTER PASSWORD: $'
+    INV_MSG DB CR,LF, 'INVALID PASSWORD $'
+    V_MSG DB CR,LF, 'VALID PASSWORD $'
+
+    C DB ?
+    COUNT_LOW DB ?
+    COUNT_UP DB ?
+    COUNT_D DB ?
+
+.CODE
+
+MAIN PROC
+;initialize DS
+    MOV AX, @DATA
+    MOV DS, AX
+    
+;print user prompt
+    LEA DX, MSG1
+    MOV AH, 9
+    INT 21H
+
+TOP:     
+    MOV AH, 1
+    INT 21H
+    MOV C,AL
+
+;CHECKS CHAR<61
+IF:   
+    MOV AL,C
+    CMP AL,061H
+    JB ELIF_NOT_LOW
+    JMP IF_LOW
+    
+;CHECKS CHAR<=7A WHEN CHAR>61    
+IF_LOW:
+    MOV AL,C
+    CMP AL,07AH
+    JBE VALID_LOW
+    JMP IF_OTHER
+    
+;CHECKS CHAR<41 WHEN CHAR<61    
+ELIF_NOT_LOW:
+    MOV AL,C
+    CMP AL,041H
+    JB ELIF_NOT_UP
+    JMP IF_UP
+    
+;CHECKS CHAR<=5A WHEN CHAR>41 AND CHAR<61    
+IF_UP:
+    MOV AL,C
+    CMP AL,05AH
+    JBE VALID_UP
+    JMP TOP
+
+;CHECKS CHAR<30 WHEN CHAR<41        
+ELIF_NOT_UP:
+    MOV AL,C
+    CMP AL,030H
+    JB ELIF_NOT_D
+    JMP IF_D
+    
+;CHECKS CHAR<=39 WHEN CHAR>30 AND CHAR<41
+IF_D:
+    MOV AL,C
+    CMP AL,039H
+    JBE VALID_D
+    JMP TOP
+    
+;CHECKS CHAR<21 WHEN CHAR<30    
+ELIF_NOT_D:
+    MOV AL,C
+    CMP AL,021H
+    JB ELSE
+    JMP TOP
+    
+    
+;CHECKS CHAR<=7E WHEN CHAR>7A    
+IF_OTHER:
+    MOV AL,C
+    CMP AL,07EH
+    JBE TOP
+    JMP ELSE
+    
+
+VALID_LOW:
+    INC COUNT_LOW
+    JMP TOP
+    
+VALID_UP:
+    INC COUNT_UP
+    JMP TOP
+    
+VALID_D:
+    INC COUNT_D
+    JMP TOP        
+        
+ELSE:
+    CMP COUNT_LOW,0
+    JZ DP_INVALID
+    CMP COUNT_UP,0
+    JZ DP_INVALID
+    CMP COUNT_D,0
+    JZ DP_INVALID
+    JMP DP_VALID
+
+DP_INVALID:
+    LEA DX, INV_MSG
+    MOV AH, 9
+    INT 21H
+    JMP EXIT  
+
+
+DP_VALID:    
+    LEA DX, V_MSG
+    MOV AH, 9
+    INT 21H
+
+
+
+    
+       
+    
+EXIT:
+    MOV AH, 4CH
+    INT 21H
+  
+MAIN ENDP
+
+    END MAIN
